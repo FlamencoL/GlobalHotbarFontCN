@@ -25,7 +25,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private readonly Label noteLabel = new()
     {
         AutoSize = true,
-        Location = new Point(12, 104),
+        Location = new Point(12, 124),
         ForeColor = SystemColors.GrayText,
         Text = "修饰键符号：Ctrl 显示为小号 C、Shift 显示为上箭头等；游戏刷新技能栏时会短暂显示原文。\n" +
                "游戏大版本更新后如果失效，请等待插件更新。",
@@ -131,7 +131,9 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
             }
 
             applied = true;
-            SetStatus(skipped > 0 ? $"运行中（{skipped} 个快捷键的文字布局不符，未替换符号）" : "运行中");
+            SetStatus(skipped > 0
+                ? $"运行中（{skipped} 个快捷键的文字布局不符，未替换符号）\n诊断：{patcher.LastMismatch}"
+                : "运行中");
         }
         catch (Exception e)
         {

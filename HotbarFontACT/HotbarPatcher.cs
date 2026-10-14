@@ -199,6 +199,9 @@ internal sealed class HotbarPatcher
     private const int StrInlineBuffer = 0x22;
     private const int StrInlineBufferSize = 0x40;
 
+    /// <summary>最近一次布局不符时的实际字段值（诊断用）</summary>
+    public string LastMismatch { get; private set; }
+
     /// <summary>
     /// 先核对布局（已用字节、长度必须和读到的原文一致），再确认缓冲区放得下，才写入；任何一项不符就不写，返回 false。
     /// </summary>
@@ -214,7 +217,13 @@ internal sealed class HotbarPatcher
 
         var oldBytes = Encoding.UTF8.GetBytes(oldText);
         var newBytes = Encoding.UTF8.GetBytes(newText);
-        if (bufUsed != oldBytes.Length + 1 || length != oldBytes.Length) return false;
+        if (bufUsed != oldBytes.Length + 1 || length != oldBytes.Length)
+        {
+            // 诊断：记下实际的字段值，显示在插件页签里，用来修正布局
+            LastMismatch = $"\"{oldText}\"（{oldBytes.Length} 字节）指针 {(pointer == utf8String + StrInlineBuffer ? "=内联缓冲区" : $"0x{pointer:X}")} " +
+                           $"容量 {bufSize} 已用 {bufUsed} 长度 {length} +0x20~0x21 {header[0x20]:X2} {header[0x21]:X2}";
+            return false;
+        }
 
         var capacity = pointer == utf8String + StrInlineBuffer ? Math.Min(bufSize, StrInlineBufferSize) : bufSize;
         if (newBytes.Length + 1 > capacity) return false;
