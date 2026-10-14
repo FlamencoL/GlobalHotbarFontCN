@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- ACT 运行在 .NET Framework 上（呆萌整合版的 ACT 本体目标为 4.7），插件必须是 .NET Framework -->
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <!-- 游戏是 64 位，跨进程读 64 位指针要求 ACT 也是 64 位进程 -->
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>GlobalHotbarFontCN_ACT</AssemblyName>
+    <RootNamespace>GlobalHotbarFontCN_ACT</RootNamespace>
+    <!-- 四位版本号；发布时由 v 标签（如 v1.0.0.1）覆盖 -->
+    <Version>1.0.0.0</Version>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 让非 Windows 环境（CI）也能编译 .NET Framework 项目 -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ACT 本体，取自呆萌整合版 DLibs 目录；运行时由 ACT 提供，不复制到输出 -->
+    <Reference Include="Advanced Combat Tracker">
+      <HintPath>..\Lib\Advanced Combat Tracker.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+</Project>
