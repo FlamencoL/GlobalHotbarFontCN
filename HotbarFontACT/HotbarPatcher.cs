@@ -8,7 +8,8 @@ namespace GlobalHotbarFontCN_ACT;
 /// <summary>
 /// 给技能栏快捷键节点打开 TextFlags 的 0x2000，让国服按节点设置的 MiedingerMed 字体显示，而不是换成中文黑体。
 ///
-/// 只改一个标志位，不改文字、不调用游戏函数（跨进程做不到）。实测写入后字体立即生效。
+/// 不调用游戏函数（跨进程做不到），只直接改内存：标志位实测写入后字体立即生效。
+/// 实验功能"修饰键符号"直接改写快捷键文字的 Utf8String（如 cs1 → ½1），写入前核对布局和缓冲区容量。
 /// 特征码和偏移为国服实测值，游戏大版本更新后可能需要重新测量。
 /// </summary>
 internal sealed class HotbarPatcher
@@ -82,9 +83,13 @@ internal sealed class HotbarPatcher
         return new HotbarPatcher(memory, slot);
     }
 
-    /// <summary>对所有已加载的技能栏执行一遍：apply=true 打开标志位，false 关闭。返回改动的节点数，未登录时返回 -1。</summary>
-    public int Run(bool apply)
+    /// <summary>
+    /// 对所有已加载的技能栏执行一遍。font：打开 / 关闭字体标志位；symbols：修饰键换成符号 / 换回字母。
+    /// 返回改动的节点数，未登录时返回 -1；skipped 为因文字布局不符而跳过的节点数。
+    /// </summary>
+    public int Run(bool font, bool symbols, out int skipped)
     {
+        skipped = 0;
         var stage = memory.ReadPointer(stageSlot);
         var manager = memory.ReadPointer(stage + StageUnitManager);
         if (!GameMemory.IsPlausibleAddress(stage) || !GameMemory.IsPlausibleAddress(manager)) return -1;
@@ -101,13 +106,13 @@ internal sealed class HotbarPatcher
         {
             var addon = BitConverter.ToInt64(entries, i * 8);
             if (!GameMemory.IsPlausibleAddress(addon) || !HotbarNames.Contains(ReadName(addon))) continue;
-            changed += PatchAddon(addon, apply);
+            changed += PatchAddon(addon, font, symbols, ref skipped);
         }
         return changed;
     }
 
     // 技能栏界面 → 每个技能格子组件 → 组件里 NodeId 2 的文字节点（只有一层组件，实测）
-    private int PatchAddon(long addon, bool apply)
+    private int PatchAddon(long addon, bool font, bool symbols, ref int skipped)
     {
         var changed = 0;
         foreach (var node in ReadNodeList(addon + UnitBaseUldManager))
@@ -126,17 +131,100 @@ internal sealed class HotbarPatcher
                     || BitConverter.ToUInt16(childHeader, NodeType) != TextNodeType)
                     continue;
 
-                if (!IsHotkeyText(ReadText(child + TextNodeText))) continue;
+                var text = ReadText(child + TextNodeText);
+                if (!IsHotkeyText(text)) continue;
 
                 var flags = memory.ReadByte(child + TextNodeFlagsHighByte);
                 if (flags < 0) continue;
 
-                var wanted = apply ? flags | KeepFontBit : flags & ~KeepFontBit;
+                var wanted = font ? flags | KeepFontBit : flags & ~KeepFontBit;
                 if (wanted != flags && memory.WriteByte(child + TextNodeFlagsHighByte, (byte)wanted))
                     changed++;
+
+                // 修饰键符号：开启时 cs1 → ½1；关闭时换回字母。游戏刷新技能栏会写回原文，下一次检查再换
+                var wantedText = symbols ? ToSymbols(text) : FromSymbols(text);
+                if (wantedText == text) continue;
+                if (WriteText(child + TextNodeText, text, wantedText))
+                    changed++;
+                else
+                    skipped++;
             }
         }
         return changed;
+    }
+
+    // ---- 修饰键符号 ----
+    // 国服快捷键开头的修饰键是小写字母，顺序固定为 c(Ctrl) → a(Alt) → s(Shift)，如 cs1、cas1、sR。
+    // 国服 MiedingerMed 字体里有国际服用的修饰键符号，借用了 Latin-1 区的字符位（实测）。
+    private static readonly Dictionary<string, string> ModifierSymbols = new()
+    {
+        ["c"] = "¢",   // 小号 C
+        ["a"] = "ª",   // 小号 A
+        ["s"] = "§",   // 上箭头
+        ["ca"] = "¾",  // 小号 C 叠在小号 A 上（尚未和国际服核实）
+        ["cs"] = "½",  // 小号 C + 上箭头
+        ["as"] = "¼",  // 小号 A + 上箭头
+        ["cas"] = "¶", // 三条横线
+    };
+
+    private static readonly Dictionary<char, string> SymbolModifiers =
+        ModifierSymbols.ToDictionary(p => p.Value[0], p => p.Key);
+
+    private static string ToSymbols(string text)
+    {
+        var length = ModifierPrefixLength(text);
+        return length == 0 ? text : ModifierSymbols[text.Substring(0, length)] + text.Substring(length);
+    }
+
+    private static string FromSymbols(string text) =>
+        text.Length > 1 && SymbolModifiers.TryGetValue(text[0], out var modifiers) ? modifiers + text.Substring(1) : text;
+
+    // 开头按 c、a、s 顺序出现的小写修饰键有几个；后面必须还剩按键，否则不算修饰键
+    private static int ModifierPrefixLength(string text)
+    {
+        var i = 0;
+        foreach (var m in "cas")
+        {
+            if (i < text.Length && text[i] == m)
+                i++;
+        }
+        return i < text.Length ? i : 0;
+    }
+
+    // ---- 直接改写 Utf8String（不调用游戏函数）----
+    // Utf8String 布局：+0x00 文字指针 | +0x08 缓冲区容量 | +0x10 已用字节（含结尾 0）| +0x18 文字长度 | +0x22 内联缓冲区（0x40 字节）
+    private const int StrBufSize = 0x08;
+    private const int StrBufUsed = 0x10;
+    private const int StrLength = 0x18;
+    private const int StrInlineBuffer = 0x22;
+    private const int StrInlineBufferSize = 0x40;
+
+    /// <summary>
+    /// 先核对布局（已用字节、长度必须和读到的原文一致），再确认缓冲区放得下，才写入；任何一项不符就不写，返回 false。
+    /// </summary>
+    private bool WriteText(long utf8String, string oldText, string newText)
+    {
+        var header = memory.ReadBytes(utf8String, StrInlineBuffer);
+        if (header == null) return false;
+
+        var pointer = BitConverter.ToInt64(header, 0);
+        var bufSize = BitConverter.ToInt64(header, StrBufSize);
+        var bufUsed = BitConverter.ToInt64(header, StrBufUsed);
+        var length = BitConverter.ToInt64(header, StrLength);
+
+        var oldBytes = Encoding.UTF8.GetBytes(oldText);
+        var newBytes = Encoding.UTF8.GetBytes(newText);
+        if (bufUsed != oldBytes.Length + 1 || length != oldBytes.Length) return false;
+
+        var capacity = pointer == utf8String + StrInlineBuffer ? Math.Min(bufSize, StrInlineBufferSize) : bufSize;
+        if (newBytes.Length + 1 > capacity) return false;
+
+        // 先写内容（带结尾 0），再写长度
+        var content = new byte[newBytes.Length + 1];
+        Array.Copy(newBytes, content, newBytes.Length);
+        return memory.WriteBytes(pointer, content)
+            && memory.WriteBytes(utf8String + StrBufUsed, BitConverter.GetBytes((long)content.Length))
+            && memory.WriteBytes(utf8String + StrLength, BitConverter.GetBytes((long)newBytes.Length));
     }
 
     private IEnumerable<long> ReadNodeList(long uldManager)

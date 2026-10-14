@@ -96,10 +96,12 @@ internal sealed class GameMemory : IDisposable
         return b == null ? -1 : b[0];
     }
 
-    public bool WriteByte(long address, byte value)
+    public bool WriteByte(long address, byte value) => WriteBytes(address, new[] { value });
+
+    public bool WriteBytes(long address, byte[] bytes)
     {
         if (!IsPlausibleAddress(address)) return false;
-        return WriteProcessMemory(handle, new IntPtr(address), new[] { value }, new IntPtr(1), out var written) && written.ToInt64() == 1;
+        return WriteProcessMemory(handle, new IntPtr(address), bytes, new IntPtr(bytes.Length), out var written) && written.ToInt64() == bytes.Length;
     }
 
     /// <summary>用户态 64 位地址的粗略检查，挡掉 0 和明显无效的值</summary>

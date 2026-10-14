@@ -20,13 +20,14 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private const int IntervalMs = 1000;
 
     private readonly CheckBox enabledBox = new() { Text = "启用（技能栏快捷键改用 MiedingerMed 字体）", AutoSize = true, Location = new Point(12, 12) };
-    private readonly Label statusLabel = new() { AutoSize = true, Location = new Point(12, 44) };
+    private readonly CheckBox symbolsBox = new() { Text = "修饰键显示为国际服符号（实验）", AutoSize = true, Location = new Point(12, 40) };
+    private readonly Label statusLabel = new() { AutoSize = true, Location = new Point(12, 72) };
     private readonly Label noteLabel = new()
     {
         AutoSize = true,
-        Location = new Point(12, 76),
+        Location = new Point(12, 104),
         ForeColor = SystemColors.GrayText,
-        Text = "只改字体，不改快捷键文字。\n" +
+        Text = "修饰键符号：Ctrl 显示为小号 C、Shift 显示为上箭头等；游戏刷新技能栏时会短暂显示原文。\n" +
                "游戏大版本更新后如果失效，请等待插件更新。",
     };
 
@@ -37,6 +38,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private HotbarPatcher patcher;
     private bool applied;
     private volatile bool enabled = true;
+    private volatile bool symbols;
     private string lastStatus;
 
     private static string ConfigPath => Path.Combine(
@@ -50,15 +52,22 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     {
         pluginStatusText.Text = Description;
 
-        enabled = LoadEnabled();
+        LoadConfig();
         enabledBox.Checked = enabled;
+        symbolsBox.Checked = symbols;
         enabledBox.CheckedChanged += (_, _) =>
         {
             enabled = enabledBox.Checked;
-            SaveEnabled(enabled);
+            SaveConfig();
+        };
+        symbolsBox.CheckedChanged += (_, _) =>
+        {
+            symbols = symbolsBox.Checked;
+            SaveConfig();
         };
 
         Controls.Add(enabledBox);
+        Controls.Add(symbolsBox);
         Controls.Add(statusLabel);
         Controls.Add(noteLabel);
         // 页签第一次显示时才创建窗口句柄，在那之前更新的状态到这时补上
@@ -83,7 +92,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         try
         {
             if (applied && memory != null && !memory.HasExited)
-                patcher?.Run(apply: false);
+                patcher?.Run(font: false, symbols: false, out _);
         }
         catch
         {
@@ -106,14 +115,15 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
             {
                 if (applied)
                 {
-                    patcher.Run(apply: false);
+                    patcher.Run(font: false, symbols: false, out _);
                     applied = false;
                 }
                 SetStatus("已关闭");
                 return;
             }
 
-            var changed = patcher.Run(apply: true);
+            // 每次都按当前设置执行：关掉"修饰键符号"时会把符号换回字母
+            var changed = patcher.Run(font: true, symbols, out var skipped);
             if (changed < 0)
             {
                 SetStatus("已连接游戏，等待登录角色…");
@@ -121,7 +131,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
             }
 
             applied = true;
-            SetStatus("运行中");
+            SetStatus(skipped > 0 ? $"运行中（{skipped} 个快捷键的文字布局不符，未替换符号）" : "运行中");
         }
         catch (Exception e)
         {
@@ -217,24 +227,43 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         }
     }
 
-    private static bool LoadEnabled()
+    // 配置文件每行一项：enabled=true / symbols=false。读不到时用默认值（启用、不替换符号）
+    private void LoadConfig()
     {
         try
         {
-            return !File.Exists(ConfigPath) || File.ReadAllText(ConfigPath).Trim() != "false";
+            if (!File.Exists(ConfigPath)) return;
+            foreach (var line in File.ReadAllLines(ConfigPath))
+            {
+                // 旧版配置只有一行 true / false，表示是否启用
+                if (line.Trim() == "false") enabled = false;
+
+                var parts = line.Split('=');
+                if (parts.Length != 2) continue;
+                var value = parts[1].Trim() == "true";
+                switch (parts[0].Trim())
+                {
+                    case "enabled": enabled = value; break;
+                    case "symbols": symbols = value; break;
+                }
+            }
         }
         catch
         {
-            return true;
+            // 读取失败用默认值
         }
     }
 
-    private static void SaveEnabled(bool value)
+    private void SaveConfig()
     {
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-            File.WriteAllText(ConfigPath, value ? "true" : "false");
+            File.WriteAllLines(ConfigPath, new[]
+            {
+                $"enabled={(enabled ? "true" : "false")}",
+                $"symbols={(symbols ? "true" : "false")}",
+            });
         }
         catch
         {
