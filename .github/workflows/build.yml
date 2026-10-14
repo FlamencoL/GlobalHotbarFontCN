@@ -148,8 +148,8 @@ jobs:
       - name: 上传编译结果
         uses: actions/upload-artifact@v4
         with:
-          name: GlobalHotbarFontCN_ACT
-          path: GlobalHotbarFontCN.ACT/HotbarFontACT/bin/Release/GlobalHotbarFontCN_ACT.dll
+          name: GlobalHotbarFontCN.ACT
+          path: GlobalHotbarFontCN.ACT/HotbarFontACT/bin/Release/GlobalHotbarFontCN.ACT.dll
 
   # ---------------- GitHub Release（只在 v 标签时）----------------
   release:
@@ -170,7 +170,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          ACT_DLL=artifacts/GlobalHotbarFontCN_ACT/GlobalHotbarFontCN_ACT.dll
+          ACT_DLL=artifacts/GlobalHotbarFontCN.ACT/GlobalHotbarFontCN.ACT.dll
           DALAMUD_ZIP=HotbarFont-Dalamud.zip
           cp artifacts/HotbarFont-Dalamud/latest.zip "$DALAMUD_ZIP"
 
@@ -180,6 +180,6 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" "$ACT_DLL" "$DALAMUD_ZIP" \
               --title "GlobalHotbarFontCN $GITHUB_REF_NAME" \
-              --notes "- ACT 版：下载 GlobalHotbarFontCN_ACT.dll，在 ACT 的「插件列表」中添加并启用。
+              --notes "- ACT 版：下载 GlobalHotbarFontCN.ACT.dll，在 ACT 的「插件列表」中添加并启用。
           - 卫月版：通过插件源订阅安装，见仓库 README。HotbarFont-Dalamud.zip 为同版本的插件包。"
           fi

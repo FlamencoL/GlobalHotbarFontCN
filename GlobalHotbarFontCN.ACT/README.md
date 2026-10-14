@@ -6,7 +6,7 @@
 
 ## 安装
 
-1. 从 [Releases](https://github.com/FlamencoL/GlobalHotbarFontCN/releases) 下载 `GlobalHotbarFontCN_ACT.dll`
+1. 从 [Releases](https://github.com/FlamencoL/GlobalHotbarFontCN/releases) 下载 `GlobalHotbarFontCN.ACT.dll`
 2. ACT →「插件」→「插件列表」→ 浏览选择该 DLL →「添加/启用插件」
 3. 插件页签「Hotbar Font」里可以开关功能，并查看运行状态
 

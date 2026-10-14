@@ -7,7 +7,7 @@ using System.Threading;
 using System.Windows.Forms;
 using Advanced_Combat_Tracker;
 
-namespace GlobalHotbarFontCN_ACT;
+namespace GlobalHotbarFontCN.ACT;
 
 /// <summary>
 /// ACT 插件入口：把国服技能栏上带字母、修饰键或小键盘键的快捷键改用 MiedingerMed 字体显示（与国际服一致）。

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace GlobalHotbarFontCN_ACT;
+namespace GlobalHotbarFontCN.ACT;
 
 /// <summary>跨进程读写游戏内存，以及在游戏模块里扫描特征码。</summary>
 internal sealed class GameMemory : IDisposable

@@ -1,8 +1,6 @@
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
 
   <PropertyGroup>
-    <!-- 四位版本号，与卫月显示一致；发布时由 v 标签（如 v1.0.1.1）覆盖 -->
-    <Version>1.0.1.4</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- 国服卫月的 Dalamud.dll 所在文件夹。如果编译报找不到 Dalamud，就改成你电脑上的实际路径 -->
     <DalamudLibPath>$(appdata)\XIVLauncherCN\addon\Hooks\dev\</DalamudLibPath>

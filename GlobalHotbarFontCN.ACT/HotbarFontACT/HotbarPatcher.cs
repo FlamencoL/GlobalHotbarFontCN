@@ -5,7 +5,7 @@ using System.Text;
 using GlobalHotbarFontCN.Common;
 using static GlobalHotbarFontCN.Common.GameOffsets;
 
-namespace GlobalHotbarFontCN_ACT;
+namespace GlobalHotbarFontCN.ACT;
 
 /// <summary>
 /// 给技能栏快捷键节点打开 TextFlags 的 KeepFontFlag，让国服按节点设置的 MiedingerMed 字体显示，而不是换成中文黑体。

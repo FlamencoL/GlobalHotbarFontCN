@@ -19,7 +19,7 @@
 - [modifier-symbols.md](docs/modifier-symbols.md)：国服 MiedingerMed 字体中的修饰键符号编码
 - [act-offsets.md](docs/act-offsets.md)：ACT 版所需特征码与偏移的检查和更新方法
 
-两个版本使用同一个版本号，推送 `v` 开头的四位版本标签（如 `v1.0.1.5`）时一起发布：卫月版发布到插件源，Release 里附上 ACT 版 DLL 和卫月版插件包。
+两个版本使用同一个版本号，推送 `v` 开头的四位版本标签（如 `v1.0.1.5`）时一起发布：卫月版发布到插件源，Release 里附上 ACT 版 DLL 和卫月版插件包。版本号取自标签，发布时不需要改代码；[Directory.Build.props](Directory.Build.props) 里的版本号只用于测试版和本地编译。
 
 ## 许可证
 

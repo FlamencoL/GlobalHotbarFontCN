@@ -6,10 +6,8 @@
     <LangVersion>latest</LangVersion>
     <!-- 游戏是 64 位，跨进程读 64 位指针要求 ACT 也是 64 位进程 -->
     <PlatformTarget>x64</PlatformTarget>
-    <AssemblyName>GlobalHotbarFontCN_ACT</AssemblyName>
-    <RootNamespace>GlobalHotbarFontCN_ACT</RootNamespace>
-    <!-- 四位版本号；发布时由 v 标签（如 v1.0.1.5）覆盖 -->
-    <Version>1.0.1.4</Version>
+    <AssemblyName>GlobalHotbarFontCN.ACT</AssemblyName>
+    <RootNamespace>GlobalHotbarFontCN.ACT</RootNamespace>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

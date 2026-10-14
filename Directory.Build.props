@@ -1,0 +1,8 @@
+<Project>
+  <!-- 仓库内所有项目共用的设置，MSBuild 会自动从项目目录往上找到并导入本文件 -->
+  <PropertyGroup>
+    <!-- 四位版本号，两个版本共用。只用于测试版和本地编译；
+         正式版由 v 标签（如 v1.0.1.5）通过 -p:Version 覆盖，发布时不需要改这里 -->
+    <Version>1.0.1.4</Version>
+  </PropertyGroup>
+</Project>
