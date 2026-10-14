@@ -8,7 +8,7 @@
 
 1. 从 [Releases](https://github.com/FlamencoL/GlobalHotbarFontCN/releases) 下载 `GlobalHotbarFontCN.ACT.dll`
 2. ACT →「插件」→「插件列表」→ 浏览选择该 DLL →「添加/启用插件」
-3. 插件页签「Hotbar Font」里可以开关功能，并查看运行状态
+3. 插件页签「Hotbar Font」里可以开关功能，并查看运行状态，设置保存在 DLL 同目录、同名的 `.cfg` 文件（`GlobalHotbarFontCN.ACT.cfg`）
 
 - 需要 64 位 ACT，且 ACT 与游戏以相同权限运行（都用或都不用管理员身份）
 - 装有 FFXIV 解析插件时，使用它当前解析的游戏进程；否则按进程名 `ffxiv_dx11` 查找

@@ -45,9 +45,9 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private volatile bool symbols = true;
     private string lastStatus;
 
-    private static string ConfigPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Advanced Combat Tracker", "Config", "GlobalHotbarFontCN.ACT.txt");
+    // 设置文件和插件 DLL 同名、同目录，只换扩展名
+    private const string ConfigExtension = ".cfg";
+    private string configPath;
 
     // 插件列表里显示的固定描述；运行状态只显示在插件页签里
     private const string Description = "国服技能栏快捷键改用 MiedingerMed 字体（与国际服一致）";
@@ -56,6 +56,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     {
         pluginStatusText.Text = Description;
 
+        configPath = Path.ChangeExtension(GetPluginFilePath(), ConfigExtension);
         LoadConfig();
         enabledBox.Checked = enabled;
         symbolsBox.Checked = symbols;
@@ -233,13 +234,37 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         }
     }
 
+    /// <summary>
+    /// 插件 DLL 的完整路径，设置文件按它推导。优先用 ACT 记录的插件文件路径；拿不到时用程序集位置；
+    /// 都拿不到时退回 %APPDATA%\Advanced Combat Tracker\Config\程序集名.dll（只用来推导设置文件路径）。
+    /// </summary>
+    private string GetPluginFilePath()
+    {
+        try
+        {
+            var path = ActGlobals.oFormActMain.PluginGetSelfData(this)?.pluginFile?.FullName;
+            if (!string.IsNullOrEmpty(path)) return path;
+        }
+        catch
+        {
+            // ACT 版本不同、接口变了时，用下面的办法
+        }
+
+        var assembly = typeof(HotbarFontPlugin).Assembly;
+        if (!string.IsNullOrEmpty(assembly.Location))
+            return assembly.Location;
+
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Advanced Combat Tracker", "Config", assembly.GetName().Name + ".dll");
+    }
+
     // 配置文件每行一项：enabled=true / symbols=true。读不到时用默认值（启用、替换符号）
     private void LoadConfig()
     {
         try
         {
-            if (!File.Exists(ConfigPath)) return;
-            foreach (var line in File.ReadAllLines(ConfigPath))
+            if (!File.Exists(configPath)) return;
+            foreach (var line in File.ReadAllLines(configPath))
             {
                 // 旧版配置只有一行 true / false，表示是否启用
                 if (line.Trim() == "false") enabled = false;
@@ -264,8 +289,8 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-            File.WriteAllLines(ConfigPath, new[]
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath));
+            File.WriteAllLines(configPath, new[]
             {
                 $"enabled={(enabled ? "true" : "false")}",
                 $"symbols={(symbols ? "true" : "false")}",
