@@ -1,0 +1,21 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+
+  <PropertyGroup>
+    <!-- 四位版本号，与卫月显示一致；发布时由 v 标签（如 v1.0.1.1）覆盖 -->
+    <Version>1.0.1.4</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- 国服卫月的 Dalamud.dll 所在文件夹。如果编译报找不到 Dalamud，就改成你电脑上的实际路径 -->
+    <DalamudLibPath>$(appdata)\XIVLauncherCN\addon\Hooks\dev\</DalamudLibPath>
+  </PropertyGroup>
+
+  <!-- 调试命令（DevTools 文件夹里的 glyphs、preview、show、actinfo、actsig、rawflag，见 docs/）只编进测试版：
+       CI 在非 v 标签的构建里传 -p:DevTools=true；本地用 Debug 配置编译时也会带上。
+       发布用的 v 标签构建不带，正式版里没有这些命令。 -->
+  <PropertyGroup Condition="'$(DevTools)' == 'true' or '$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);DEVTOOLS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(DevTools)' != 'true' and '$(Configuration)' != 'Debug'">
+    <Compile Remove="DevTools\**" />
+  </ItemGroup>
+
+</Project>

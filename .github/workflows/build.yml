@@ -1,7 +1,9 @@
-name: Build GlobalHotbarFontCN_ACT
+name: Build GlobalHotbarFontCN
 
-# 推送代码：只编译，检查能否通过
-# 推送 v 开头的四位版本标签（如 v1.0.0.1）：用标签里的版本号编译，并创建 GitHub Release 附上 DLL
+# 推送代码：编译两个版本（卫月版为带调试命令的测试版），检查能否通过
+# 推送 v 开头的四位版本标签（如 v1.0.1.5）：两个版本都用标签里的版本号编译，
+#   卫月版发布到插件源仓库，并创建一个 GitHub Release 附上两个版本的文件
+# 也可以在 Actions 页面手动点 "Run workflow"（只编译）
 on:
   push:
     branches: [ "**" ]
@@ -11,13 +13,119 @@ on:
 permissions:
   contents: write # 创建 Release
 
-env:
-  PROJECT: HotbarFontACT/HotbarFontACT.csproj
-  DLL: HotbarFontACT/bin/Release/GlobalHotbarFontCN_ACT.dll
-
 jobs:
-  build:
+  # ---------------- 卫月版 ----------------
+  dalamud:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: GlobalHotbarFontCN.Dalamud
+    env:
+      PLUGIN_NAME: HotbarFont
+      # 插件源仓库：存放 pluginmaster.json 和插件压缩包，玩家订阅它
+      PLUGIN_REPO: FlamencoL/FFXIVDalamudPlugins
+      PLUGIN_REPO_BRANCH: main
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      # 准备卫月的库文件：
+      #   - 如果有 GlobalHotbarFontCN.Dalamud/dalamud/Dalamud.dll（从自己电脑上传的国服版本），就用它；
+      #   - 否则下载国际服最新版。国服 API 版本可能落后，编译出来的插件国服可能不认。
+      - name: 准备卫月库
+        run: |
+          if [ -f dalamud/Dalamud.dll ]; then
+            echo "使用仓库中的国服卫月库"
+            echo "DALAMUD_DIR=$PWD/dalamud/" >> $GITHUB_ENV
+          else
+            echo "仓库中没有 dalamud/Dalamud.dll，下载国际服卫月库"
+            wget -q https://goatcorp.github.io/dalamud-distrib/latest.zip -O /tmp/dalamud.zip
+            mkdir -p /tmp/dalamud
+            unzip -q /tmp/dalamud.zip -d /tmp/dalamud
+            echo "DALAMUD_DIR=/tmp/dalamud/" >> $GITHUB_ENV
+          fi
+
+      # v 标签构建（正式版）：用标签里的版本号，卫月靠版本号变大来判断有更新
+      # 其他构建（测试版）：带上调试命令（DevTools，见 HotbarFont.csproj）
+      - name: 编译
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            EXTRA_ARG="-p:Version=${GITHUB_REF_NAME#v}"
+            echo "正式版：${GITHUB_REF_NAME#v}"
+          else
+            EXTRA_ARG="-p:DevTools=true"
+            echo "测试版：带调试命令"
+          fi
+          dotnet build $PLUGIN_NAME/$PLUGIN_NAME.csproj -c Release "-p:DalamudLibPath=$DALAMUD_DIR" $EXTRA_ARG
+
+      - name: 上传编译结果
+        uses: actions/upload-artifact@v4
+        with:
+          name: HotbarFont-Dalamud
+          path: GlobalHotbarFontCN.Dalamud/${{ env.PLUGIN_NAME }}/bin/Release/${{ env.PLUGIN_NAME }}/
+
+      # ---- 以下只在推送 v 标签时执行：发布到插件源仓库 ----
+
+      - name: 拉取插件源仓库
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PLUGIN_REPO }}
+          ref: ${{ env.PLUGIN_REPO_BRANCH }}
+          # 插件源仓库的 Deploy key 私钥（公钥在插件源仓库的 Deploy keys 里，需勾选 Allow write access）
+          ssh-key: ${{ secrets.PLUGIN_REPO_DEPLOY_KEY }}
+          path: plugin-repo
+
+      # 打包工具生成的清单（版本号、API 版本等）+ 下载链接 = pluginmaster.json 里这个插件的条目。
+      # 已有同名插件就原地替换，没有就追加，不影响其他插件。
+      - name: 更新插件源
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: .
+        run: |
+          OUT=GlobalHotbarFontCN.Dalamud/$PLUGIN_NAME/bin/Release/$PLUGIN_NAME
+          test -f $OUT/latest.zip && test -f $OUT/$PLUGIN_NAME.json || { echo "找不到打包产物"; ls -la $OUT; exit 1; }
+
+          mkdir -p plugin-repo/plugins/$PLUGIN_NAME
+          cp $OUT/latest.zip plugin-repo/plugins/$PLUGIN_NAME/latest.zip
+
+          URL="https://raw.githubusercontent.com/$PLUGIN_REPO/$PLUGIN_REPO_BRANCH/plugins/$PLUGIN_NAME/latest.zip"
+          # 去掉可能存在的 UTF-8 BOM，否则 jq 解析失败
+          ENTRY=$(sed '1s/^\xEF\xBB\xBF//' $OUT/$PLUGIN_NAME.json | jq -c --arg url "$URL" --argjson t "$(date +%s)" \
+            '. + {DownloadLinkInstall: $url, DownloadLinkUpdate: $url, DownloadLinkTesting: $url, LastUpdate: $t}')
+
+          MASTER=plugin-repo/pluginmaster.json
+          [ -f $MASTER ] || echo '[]' > $MASTER
+          jq --argjson e "$ENTRY" \
+            'if any(.[]; .InternalName == $e.InternalName)
+             then map(if .InternalName == $e.InternalName then $e else . end)
+             else . + [$e] end' $MASTER > /tmp/master.json
+          mv /tmp/master.json $MASTER
+          cat $MASTER
+
+      - name: 推送插件源
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: plugin-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "$PLUGIN_NAME $GITHUB_REF_NAME"
+          git push
+
+  # ---------------- ACT 版 ----------------
+  act:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: GlobalHotbarFontCN.ACT
 
     steps:
       - name: 拉取代码
@@ -35,26 +143,43 @@ jobs:
             VERSION_ARG="-p:Version=${GITHUB_REF_NAME#v}"
             echo "正式版：${GITHUB_REF_NAME#v}"
           fi
-          dotnet build $PROJECT -c Release $VERSION_ARG
+          dotnet build HotbarFontACT/HotbarFontACT.csproj -c Release $VERSION_ARG
 
       - name: 上传编译结果
         uses: actions/upload-artifact@v4
         with:
           name: GlobalHotbarFontCN_ACT
-          path: ${{ env.DLL }}
+          path: GlobalHotbarFontCN.ACT/HotbarFontACT/bin/Release/GlobalHotbarFontCN_ACT.dll
 
+  # ---------------- GitHub Release（只在 v 标签时）----------------
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ dalamud, act ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 下载两个版本的编译结果
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # 同名 Release 已存在（如重新打同一个标签）时，覆盖附件，并确保它是已发布状态：
+      # 标签被删除时 GitHub 会把对应的 Release 变成草稿，重新打标签后要重新发布
       - name: 发布 Release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        # 同名 Release 已存在（如重新打同一个标签）时，用新编译的 DLL 覆盖附件，并确保它是已发布状态：
-        # 标签被删除时 GitHub 会把对应的 Release 变成草稿，重新打标签后要重新发布
+          GH_REPO: ${{ github.repository }}
         run: |
+          ACT_DLL=artifacts/GlobalHotbarFontCN_ACT/GlobalHotbarFontCN_ACT.dll
+          DALAMUD_ZIP=HotbarFont-Dalamud.zip
+          cp artifacts/HotbarFont-Dalamud/latest.zip "$DALAMUD_ZIP"
+
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$DLL" --clobber
+            gh release upload "$GITHUB_REF_NAME" "$ACT_DLL" "$DALAMUD_ZIP" --clobber
             gh release edit "$GITHUB_REF_NAME" --draft=false --tag "$GITHUB_REF_NAME"
           else
-            gh release create "$GITHUB_REF_NAME" "$DLL" \
-              --title "GlobalHotbarFontCN_ACT $GITHUB_REF_NAME" \
-              --notes "下载 GlobalHotbarFontCN_ACT.dll，在 ACT 的「插件列表」中添加并启用。"
+            gh release create "$GITHUB_REF_NAME" "$ACT_DLL" "$DALAMUD_ZIP" \
+              --title "GlobalHotbarFontCN $GITHUB_REF_NAME" \
+              --notes "- ACT 版：下载 GlobalHotbarFontCN_ACT.dll，在 ACT 的「插件列表」中添加并启用。
+          - 卫月版：通过插件源订阅安装，见仓库 README。HotbarFont-Dalamud.zip 为同版本的插件包。"
           fi
