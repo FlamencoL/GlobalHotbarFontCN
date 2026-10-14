@@ -47,7 +47,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
 
     private static string ConfigPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Advanced Combat Tracker", "Config", "GlobalHotbarFontCN_ACT.txt");
+        "Advanced Combat Tracker", "Config", "GlobalHotbarFontCN.ACT.txt");
 
     // 插件列表里显示的固定描述；运行状态只显示在插件页签里
     private const string Description = "国服技能栏快捷键改用 MiedingerMed 字体（与国际服一致）";
