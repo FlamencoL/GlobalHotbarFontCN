@@ -1,0 +1,2 @@
+# GlobalHotbarFontCN_ACT
+将国服技能栏快捷键字体对齐国际服风格的ACT插件
