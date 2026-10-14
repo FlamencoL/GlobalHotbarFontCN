@@ -30,7 +30,6 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
                "游戏大版本更新后如果失效，请等待插件更新。",
     };
 
-    private Label pluginStatusText;
     private System.Threading.Timer timer;
     private int ticking;
 
@@ -44,9 +43,12 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Advanced Combat Tracker", "Config", "GlobalHotbarFontCN_ACT.txt");
 
+    // 插件列表里显示的固定描述；运行状态只显示在插件页签里
+    private const string Description = "国服技能栏快捷键改用 MiedingerMed 字体（与国际服一致）";
+
     public void InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
     {
-        this.pluginStatusText = pluginStatusText;
+        pluginStatusText.Text = Description;
 
         enabled = LoadEnabled();
         enabledBox.Checked = enabled;
@@ -59,6 +61,8 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         Controls.Add(enabledBox);
         Controls.Add(statusLabel);
         Controls.Add(noteLabel);
+        // 页签第一次显示时才创建窗口句柄，在那之前更新的状态到这时补上
+        HandleCreated += (_, _) => statusLabel.Text = $"状态：{lastStatus}";
         Dock = DockStyle.Fill;
         pluginScreenSpace.Text = "Hotbar Font";
         pluginScreenSpace.Controls.Add(this);
@@ -88,7 +92,6 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
 
         memory?.Dispose();
         memory = null;
-        pluginStatusText.Text = "Hotbar Font 已停止";
     }
 
     private void Tick()
@@ -196,22 +199,22 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         return Process.GetProcessesByName("ffxiv_dx11").FirstOrDefault();
     }
 
+    // 定时器在后台线程上调用，控件只能在界面线程上改，所以要转到界面线程。
+    // 页签还没显示过（没有窗口句柄）时先只记下，等 HandleCreated 时补上。
     private void SetStatus(string status)
     {
         if (status == lastStatus) return;
         lastStatus = status;
 
-        void Update()
+        if (!IsHandleCreated) return;
+        try
         {
-            statusLabel.Text = $"状态：{status}";
-            if (pluginStatusText != null)
-                pluginStatusText.Text = $"Hotbar Font：{status}";
+            BeginInvoke((Action)(() => statusLabel.Text = $"状态：{status}"));
         }
-
-        if (IsHandleCreated && InvokeRequired)
-            BeginInvoke((Action)Update);
-        else if (!InvokeRequired)
-            Update();
+        catch (InvalidOperationException)
+        {
+            // 句柄恰好在销毁（ACT 关闭中），忽略
+        }
     }
 
     private static bool LoadEnabled()
