@@ -192,7 +192,8 @@ internal sealed class HotbarPatcher
     }
 
     // ---- 直接改写 Utf8String（不调用游戏函数）----
-    // Utf8String 布局：+0x00 文字指针 | +0x08 缓冲区容量 | +0x10 已用字节（含结尾 0）| +0x18 文字长度 | +0x22 内联缓冲区（0x40 字节）
+    // Utf8String 布局（实测）：+0x00 文字指针 | +0x08 缓冲区容量（64）| +0x10 已用字节（含结尾 0）| +0x18 文字长度（快捷键里为 0）|
+    // +0x20 是否为空 | +0x21 是否使用内联缓冲区 | +0x22 内联缓冲区（0x40 字节）
     private const int StrBufSize = 0x08;
     private const int StrBufUsed = 0x10;
     private const int StrLength = 0x18;
@@ -217,7 +218,8 @@ internal sealed class HotbarPatcher
 
         var oldBytes = Encoding.UTF8.GetBytes(oldText);
         var newBytes = Encoding.UTF8.GetBytes(newText);
-        if (bufUsed != oldBytes.Length + 1 || length != oldBytes.Length)
+        // 技能栏快捷键的文字长度字段实测为 0（游戏没维护），所以长度为 0 也算布局正确
+        if (bufUsed != oldBytes.Length + 1 || (length != oldBytes.Length && length != 0))
         {
             // 诊断：记下实际的字段值，显示在插件页签里，用来修正布局
             LastMismatch = $"\"{oldText}\"（{oldBytes.Length} 字节）指针 {(pointer == utf8String + StrInlineBuffer ? "=内联缓冲区" : $"0x{pointer:X}")} " +
@@ -228,12 +230,12 @@ internal sealed class HotbarPatcher
         var capacity = pointer == utf8String + StrInlineBuffer ? Math.Min(bufSize, StrInlineBufferSize) : bufSize;
         if (newBytes.Length + 1 > capacity) return false;
 
-        // 先写内容（带结尾 0），再写长度
+        // 先写内容（带结尾 0），再写已用字节；长度字段原本是 0 就保持 0，不写入游戏本来不会出现的值
         var content = new byte[newBytes.Length + 1];
         Array.Copy(newBytes, content, newBytes.Length);
         return memory.WriteBytes(pointer, content)
             && memory.WriteBytes(utf8String + StrBufUsed, BitConverter.GetBytes((long)content.Length))
-            && memory.WriteBytes(utf8String + StrLength, BitConverter.GetBytes((long)newBytes.Length));
+            && (length == 0 || memory.WriteBytes(utf8String + StrLength, BitConverter.GetBytes((long)newBytes.Length)));
     }
 
     private IEnumerable<long> ReadNodeList(long uldManager)
