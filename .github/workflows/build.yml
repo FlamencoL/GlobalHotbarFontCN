@@ -47,7 +47,12 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
+        # 同名 Release 已存在（如重新打同一个标签）时，用新编译的 DLL 覆盖附件
         run: |
-          gh release create "$GITHUB_REF_NAME" "$DLL" \
-            --title "GlobalHotbarFontCN_ACT $GITHUB_REF_NAME" \
-            --notes "下载 GlobalHotbarFontCN_ACT.dll，在 ACT 的「插件列表」中添加并启用。"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$DLL" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$DLL" \
+              --title "GlobalHotbarFontCN_ACT $GITHUB_REF_NAME" \
+              --notes "下载 GlobalHotbarFontCN_ACT.dll，在 ACT 的「插件列表」中添加并启用。"
+          fi

@@ -9,7 +9,7 @@ namespace GlobalHotbarFontCN_ACT;
 /// 给技能栏快捷键节点打开 TextFlags 的 0x2000，让国服按节点设置的 MiedingerMed 字体显示，而不是换成中文黑体。
 ///
 /// 不调用游戏函数（跨进程做不到），只直接改内存：标志位实测写入后字体立即生效。
-/// 实验功能"修饰键符号"直接改写快捷键文字的 Utf8String（如 cs1 → ½1），写入前核对布局和缓冲区容量。
+/// "修饰键符号"功能直接改写快捷键文字的 Utf8String（如 cs1 → ½1），写入前核对布局和缓冲区容量。
 /// 特征码和偏移为国服实测值，游戏大版本更新后可能需要重新测量。
 /// </summary>
 internal sealed class HotbarPatcher

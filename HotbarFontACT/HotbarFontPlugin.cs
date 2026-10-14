@@ -20,7 +20,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private const int IntervalMs = 1000;
 
     private readonly CheckBox enabledBox = new() { Text = "启用（技能栏快捷键改用 MiedingerMed 字体）", AutoSize = true, Location = new Point(12, 12) };
-    private readonly CheckBox symbolsBox = new() { Text = "修饰键显示为国际服符号（实验）", AutoSize = true, Location = new Point(12, 40) };
+    private readonly CheckBox symbolsBox = new() { Text = "修饰键显示为国际服符号", AutoSize = true, Location = new Point(12, 40) };
     private readonly Label statusLabel = new() { AutoSize = true, Location = new Point(12, 72) };
     private readonly Label noteLabel = new()
     {
