@@ -95,6 +95,8 @@ jobs:
 
           mkdir -p plugin-repo/plugins/$PLUGIN_NAME
           cp $OUT/latest.zip plugin-repo/plugins/$PLUGIN_NAME/latest.zip
+          # 插件图标：HotbarFont.json 的 IconUrl 指向插件源仓库里的这个文件
+          cp GlobalHotbarFontCN.Dalamud/$PLUGIN_NAME/images/icon.png plugin-repo/plugins/$PLUGIN_NAME/icon.png
 
           URL="https://raw.githubusercontent.com/$PLUGIN_REPO/$PLUGIN_REPO_BRANCH/plugins/$PLUGIN_NAME/latest.zip"
           # 去掉可能存在的 UTF-8 BOM，否则 jq 解析失败

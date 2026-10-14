@@ -11,6 +11,12 @@
     <Compile Include="..\..\GlobalHotbarFontCN.Common\**\*.cs" Link="Common\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 插件图标：复制到输出目录的 images/icon.png，本地开发版加载时卫月从这里读取；
+         插件源里显示的图标由 HotbarFont.json 的 IconUrl 指定，发布时 workflow 会把它复制到插件源仓库 -->
+    <Content Include="images\icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- 调试命令（DevTools 文件夹里的 glyphs、preview、show、actinfo、actsig、rawflag，见仓库根目录 docs/）只编进测试版：
        CI 在非 v 标签的构建里传 -p:DevTools=true；本地用 Debug 配置编译时也会带上。
        发布用的 v 标签构建不带，正式版里没有这些命令。 -->

@@ -2,7 +2,8 @@
   "Author": "Flamenco",
   "Name": "Hotbar Font",
   "Punchline": "修改国服技能栏快捷键字体",
-  "Description": "将国服技能栏快捷键改为游戏内置的其他字体（默认 MiedingerMed，与国际服一致），并可转为大写。",
+  "Description": "将国服技能栏快捷键改为游戏内置的其他字体（默认 MiedingerMed，与国际服一致），并可将修饰键显示为国际服符号、转为大写。",
   "Tags": [ "UI", "Hotbar" ],
-  "RepoUrl": "https://github.com/FlamencoL/FFXIVDalamudPlugins"
+  "RepoUrl": "https://github.com/FlamencoL/FFXIVDalamudPlugins",
+  "IconUrl": "https://raw.githubusercontent.com/FlamencoL/FFXIVDalamudPlugins/main/plugins/HotbarFont/icon.png"
 }
