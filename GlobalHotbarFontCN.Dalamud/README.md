@@ -23,8 +23,8 @@ https://raw.githubusercontent.com/FlamencoL/FFXIVDalamudPlugins/main/pluginmaste
 
 ## 文档
 
-- [docs/modifier-symbols.md](docs/modifier-symbols.md)：国服 MiedingerMed 字体中的修饰键符号编码
-- [docs/act-offsets.md](docs/act-offsets.md)：用本插件测试版的调试命令测量 ACT 版所需的特征码与偏移
+- [docs/modifier-symbols.md](../docs/modifier-symbols.md)：国服 MiedingerMed 字体中的修饰键符号编码
+- [docs/act-offsets.md](../docs/act-offsets.md)：用本插件测试版的调试命令测量 ACT 版所需的特征码与偏移
 
 ## 编译
 
@@ -33,3 +33,7 @@ https://raw.githubusercontent.com/FlamencoL/FFXIVDalamudPlugins/main/pluginmaste
 - 非 `v` 标签的构建是测试版，带调试命令（`HotbarFont/DevTools/`）；正式版不带
 - `GlobalHotbarFontCN.Dalamud/dalamud/Dalamud.dll` 存在时用它编译，否则下载国际服最新版卫月库
 - 本地编译需要 .NET 10 SDK，并在 `HotbarFont/HotbarFont.csproj` 中把 `DalamudLibPath` 改成本机卫月库路径
+
+## 许可证
+
+本插件以 [AGPL-3.0](../LICENSE) 许可证发布。

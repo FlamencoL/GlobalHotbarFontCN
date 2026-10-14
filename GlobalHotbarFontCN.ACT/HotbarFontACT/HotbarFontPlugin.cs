@@ -18,6 +18,10 @@ namespace GlobalHotbarFontCN_ACT;
 public sealed class HotbarFontPlugin : UserControl, IActPluginV1
 {
     private const int IntervalMs = 1000;
+    // 特征码没匹配时，过多久再重试（避免每秒都扫描整个模块）
+    private const int SignatureRetryDelayMs = 30000;
+    // 卸载时最多等正在执行的一次检查多久
+    private const int DeInitWaitMs = 3000;
 
     private readonly CheckBox enabledBox = new() { Text = "启用（技能栏快捷键改用 MiedingerMed 字体）", AutoSize = true, Location = new Point(12, 12) };
     private readonly CheckBox symbolsBox = new() { Text = "修饰键显示为国际服符号", AutoSize = true, Location = new Point(12, 40) };
@@ -38,7 +42,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
     private HotbarPatcher patcher;
     private bool applied;
     private volatile bool enabled = true;
-    private volatile bool symbols;
+    private volatile bool symbols = true;
     private string lastStatus;
 
     private static string ConfigPath => Path.Combine(
@@ -86,7 +90,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         using (var done = new ManualResetEvent(false))
         {
             timer?.Dispose(done);
-            done.WaitOne(3000);
+            done.WaitOne(DeInitWaitMs);
         }
 
         try
@@ -178,7 +182,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
                 // 特征码失效：断开，避免每秒重复扫描整个模块；游戏重启后会再试
                 memory.Dispose();
                 memory = null;
-                Thread.Sleep(30000);
+                Thread.Sleep(SignatureRetryDelayMs);
                 return false;
             }
         }
@@ -229,7 +233,7 @@ public sealed class HotbarFontPlugin : UserControl, IActPluginV1
         }
     }
 
-    // 配置文件每行一项：enabled=true / symbols=false。读不到时用默认值（启用、不替换符号）
+    // 配置文件每行一项：enabled=true / symbols=true。读不到时用默认值（启用、替换符号）
     private void LoadConfig()
     {
         try

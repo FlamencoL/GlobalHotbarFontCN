@@ -16,7 +16,7 @@
 ## 功能
 
 - **MiedingerMed 字体**：MiedingerMed 本身是全大写字形，`sR` 显示出来就是 `SR` 的样子。
-- **修饰键显示为国际服符号（默认关闭）**：Ctrl 显示为小号 C、Shift 显示为上箭头、Alt 显示为小号 A，组合键有对应的组合符号。游戏刷新技能栏（换页、改键位）时会写回原文，插件在一秒内再换成符号，期间会短暂显示原文。
+- **修饰键显示为国际服符号（默认开启）**：Ctrl 显示为小号 C、Shift 显示为上箭头、Alt 显示为小号 A，组合键有对应的组合符号。游戏刷新技能栏（换页、改键位）时会写回原文，插件在一秒内再换成符号，期间会短暂显示原文。
 
 ## 原理
 
@@ -33,10 +33,14 @@
 
 ## 维护
 
-特征码与结构偏移集中在 [HotbarPatcher.cs](HotbarFontACT/HotbarPatcher.cs) 开头。游戏更新后如果失效，需要重新测量这些值：界面管理器的特征码、`AtkStage` → 已加载界面列表的偏移，以及技能栏 → 快捷键文字节点各结构的偏移。文字布局不符时，插件页签会显示实际字段值。
+特征码与结构偏移定义在通用目录的 [GameOffsets.cs](../GlobalHotbarFontCN.Common/GameOffsets.cs)，修饰键符号表在 [ModifierSymbols.cs](../GlobalHotbarFontCN.Common/ModifierSymbols.cs)。游戏更新后如果失效，需要重新测量这些值：界面管理器的特征码、`AtkStage` → 已加载界面列表的偏移，以及技能栏 → 快捷键文字节点各结构的偏移。文字布局不符时，插件页签会显示实际字段值。
 
 ## 编译
 
 推送到 GitHub 后由 Actions 自动编译；推送 `v` 开头的四位版本标签（如 `v1.0.1.5`）会创建 Release 并附上 DLL。
 
 `Lib/Advanced Combat Tracker.dll` 是编译时引用的 ACT 本体（取自呆萌整合版 `DLibs` 目录），运行时由 ACT 提供，不随插件分发。
+
+## 许可证
+
+本插件以 [AGPL-3.0](../LICENSE) 许可证发布。`Lib/Advanced Combat Tracker.dll` 不适用本许可证，版权归其作者所有。

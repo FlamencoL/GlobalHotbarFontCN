@@ -4,7 +4,7 @@
 （`c` / `a` / `s`），但国服 MiedingerMed 字体（`common/font/MiedingerMid_12.fdt`）里同样带有这些符号，
 它们借用了 Latin-1 区的字符位。
 
-以下结果来自国服客户端实测，字体为 MiedingerMed 12 号。测试命令在 `HotbarFont/DevTools/GlyphProbe.cs`，
+以下结果来自国服客户端实测，字体为 MiedingerMed 12 号。测试命令在卫月版的 `GlobalHotbarFontCN.Dalamud/HotbarFont/DevTools/GlyphProbe.cs`，
 只编进测试版（非 v 标签的 CI 构建，或本地 Debug 编译），正式版里没有：
 
 - `/hbfont glyphs`：列出字体文件里所有非 ASCII 字符的编码和字形尺寸
@@ -17,15 +17,17 @@
 
 国服快捷键开头的修饰键顺序固定为 `c`（Ctrl）→ `a`（Alt）→ `s`（Shift），例如 `cs1`、`cas1`、`sR`。
 
+两个版本共用的符号表在通用目录的 [ModifierSymbols.cs](../GlobalHotbarFontCN.Common/ModifierSymbols.cs)，改动时只改那里，并同步本表。
+
 | 国服文字 | 修饰键 | 字符 | 原本的字符 | 在 MiedingerMed 中显示为 | 状态 |
 |---|---|---|---|---|---|
 | `c` | Ctrl | `U+00A2` | `¢` | 小号 C | 已确认 |
 | `a` | Alt | `U+00AA` | `ª` | 小号 A | 已确认 |
 | `s` | Shift | `U+00A7` | `§` | 上箭头 | 已确认 |
-| `ca` | Ctrl+Alt | `U+00BE` | `¾` | 小号 C 叠在小号 A 上 | **推测**，尚未与国际服核实 |
+| `ca` | Ctrl+Alt | `U+00BE` | `¾` | 小号 C 叠在小号 A 上 | **推测**，尚未核实 |
 | `cs` | Ctrl+Shift | `U+00BD` | `½` | 小号 C + 上箭头 | 已确认 |
 | `as` | Alt+Shift | `U+00BC` | `¼` | 小号 A + 上箭头 | 已确认 |
-| `cas` | Ctrl+Alt+Shift | `U+00B6` | `¶` | 三条横线 | 已确认（国际服 Ctrl+Alt+Shift+字母/数字键统一用它） |
+| `cas` | Ctrl+Alt+Shift | `U+00B6` | `¶` | 三条横线 | 已确认 |
 
 `U+00BE` 的字形就是 Ctrl 与 Alt 两个符号的组合，所以推测国际服 Ctrl+Alt 用它，实际显示尚未找到资料。
 

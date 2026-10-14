@@ -8,7 +8,12 @@
     <DalamudLibPath>$(appdata)\XIVLauncherCN\addon\Hooks\dev\</DalamudLibPath>
   </PropertyGroup>
 
-  <!-- 调试命令（DevTools 文件夹里的 glyphs、preview、show、actinfo、actsig、rawflag，见 docs/）只编进测试版：
+  <ItemGroup>
+    <!-- 通用定义（技能栏、修饰键符号、游戏结构偏移），直接包含源文件编译，不单独生成程序集 -->
+    <Compile Include="..\..\GlobalHotbarFontCN.Common\**\*.cs" Link="Common\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- 调试命令（DevTools 文件夹里的 glyphs、preview、show、actinfo、actsig、rawflag，见仓库根目录 docs/）只编进测试版：
        CI 在非 v 标签的构建里传 -p:DevTools=true；本地用 Debug 配置编译时也会带上。
        发布用的 v 标签构建不带，正式版里没有这些命令。 -->
   <PropertyGroup Condition="'$(DevTools)' == 'true' or '$(Configuration)' == 'Debug'">

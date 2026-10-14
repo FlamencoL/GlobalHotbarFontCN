@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using GlobalHotbarFontCN.Common;
 
 namespace HotbarFont;
 
@@ -103,7 +104,7 @@ internal static unsafe class GlyphProbe
     // 一号技能栏所有快捷键节点（含纯数字），遍历顺序是从最后一格往前，反转成从第一格开始
     private static List<nint>? HotbarOneNodes()
     {
-        var addon = (AtkUnitBase*)(nint)Plugin.GameGui.GetAddonByName("_ActionBar", 1);
+        var addon = (AtkUnitBase*)(nint)Plugin.GameGui.GetAddonByName(HotbarDefinitions.PrimaryHotbarName, 1);
         if (addon == null)
         {
             Print("找不到 _ActionBar");

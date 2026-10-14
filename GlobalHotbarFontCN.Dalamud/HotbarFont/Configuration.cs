@@ -1,5 +1,6 @@
 using System;
 using Dalamud.Configuration;
+using GlobalHotbarFontCN.Common;
 
 namespace HotbarFont;
 
@@ -12,8 +13,8 @@ public class Configuration : IPluginConfiguration
     public bool Enabled { get; set; } = true;
 
     /// <summary>0=Axis 1=MiedingerMed 2=Miedinger 3=TrumpGothic 4=Jupiter 5=JupiterLarge
-    /// 默认 1：技能栏原本就用 MiedingerMed</summary>
-    public int FontType { get; set; } = 1;
+    /// 默认用技能栏原本的字体 MiedingerMed</summary>
+    public int FontType { get; set; } = HotbarDefinitions.OriginalFontType;
 
     /// <summary>是否把 a1 / cQ 转成 A1 / CQ（国际服样式）</summary>
     public bool Uppercase { get; set; } = true;
